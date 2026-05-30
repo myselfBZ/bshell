@@ -128,6 +128,7 @@ func (l *Lexer) NextToken() token.Token {
 	case '>':
 		if l.peek() == '>' {
 			t = token.NewToken(token.GTGT, ">>")
+			l.readChar()
 		} else {
 			t = token.NewToken(token.GT, string(l.ch))
 		}
