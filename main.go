@@ -85,8 +85,6 @@ func main() {
 			continue
 		}
 
-		if err := sh.Eval(cmds); err != nil {
-			fmt.Println("could not run command:", err)
-		}
+		sh.Eval(cmds)
 	}
-}	
+}
