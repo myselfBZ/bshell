@@ -59,12 +59,13 @@ func (s *Shell) Eval(cmds []ast.Command) error {
 
 				if ok {
 					s.execSimpleCommand(left, pw, os.Stderr, os.Stdin)
-					pw.Close()
+				} else {
+					left := node.Left.(*ast.InfixExpressionCmd)
+					s.executePipe(left, pw)
 				}
+				pw.Close()
 
 				wg.Wait()
-
-
 			case "&&":
 			case "||":
 			}
@@ -74,6 +75,40 @@ func (s *Shell) Eval(cmds []ast.Command) error {
 	return nil
 }
 
+
+func (s *Shell) executePipe(node *ast.InfixExpressionCmd, out io.Writer) error {
+	pr, pw, err := os.Pipe()
+
+	if err != nil {
+		fmt.Fprintln(os.Stderr, err.Error())
+		return err
+	}
+
+	right := node.Right.(*ast.SimpleCommand)
+
+	go func() {
+		s.execSimpleCommand(right, out, os.Stderr, pr)
+		pr.Close()
+	}()
+
+	cmd, ok := node.Left.(*ast.SimpleCommand)
+
+	if ok {
+		err := s.execSimpleCommand(cmd, pw, os.Stderr, os.Stdin)
+		pw.Close()
+
+		if err != nil {
+			return err
+		}
+
+		return nil
+	}
+
+	left := node.Left.(*ast.InfixExpressionCmd)
+
+	err = s.executePipe(left, pw)
+	return err
+}
 
 
 
