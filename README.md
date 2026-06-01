@@ -19,4 +19,3 @@ and looking up the binary in the $PATH
 
 
 
-ls | cat | echo | cmd
