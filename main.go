@@ -85,6 +85,6 @@ func main() {
 			continue
 		}
 
-		sh.Eval(cmds)
+		sh.Eval(cmds...)
 	}
 }

@@ -26,7 +26,7 @@ type Shell struct {
 }
 
 
-func (s *Shell) Eval(cmds []ast.Command) error {
+func (s *Shell) Eval(cmds ...ast.Command) error {
 	for _, c := range cmds {
 		switch node := c.(type) {
 		case *ast.SimpleCommand:
@@ -67,6 +67,12 @@ func (s *Shell) Eval(cmds []ast.Command) error {
 
 				wg.Wait()
 			case "&&":
+				err := s.Eval(node.Left)
+				if err != nil {
+					return err
+				}
+				right := node.Right.(*ast.SimpleCommand)
+				return s.execSimpleCommand(right, os.Stdout, os.Stderr, os.Stdin)
 			case "||":
 			}
 
