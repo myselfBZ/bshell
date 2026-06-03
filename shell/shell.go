@@ -66,14 +66,20 @@ func (s *Shell) Eval(cmds ...ast.Command) error {
 				pw.Close()
 
 				wg.Wait()
-			case "&&":
+			case "&&", "||":
 				err := s.Eval(node.Left)
-				if err != nil {
+				if err != nil && node.Operator == "&&" {
 					return err
+				} else if err == nil && node.Operator == "&&" {
+					right := node.Right.(*ast.SimpleCommand)
+					return s.execSimpleCommand(right, os.Stdout, os.Stderr, os.Stdin)
 				}
-				right := node.Right.(*ast.SimpleCommand)
-				return s.execSimpleCommand(right, os.Stdout, os.Stderr, os.Stdin)
-			case "||":
+
+				if err != nil  && node.Operator == "||"{
+					right := node.Right.(*ast.SimpleCommand)
+					return s.execSimpleCommand(right, os.Stdout, os.Stderr, os.Stdin)
+				}
+
 			}
 
 		}
