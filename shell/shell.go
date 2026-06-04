@@ -192,6 +192,7 @@ func (s *Shell) execSimpleCommand(cmd *ast.SimpleCommand, out io.Writer, stderr 
 	c.Stdout = out
 	c.Stderr = stderr
 	c.Stdin = in
+
 	return c.Run()
 }
 

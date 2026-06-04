@@ -40,7 +40,7 @@ func (l *Lexer) peek() byte {
 
 // do not mind the name
 func isLetter(ch byte) bool {
-	return unicode.IsLetter(rune(ch)) || unicode.IsDigit(rune(ch)) || ch == '-' || ch == '.'
+	return unicode.IsLetter(rune(ch)) || unicode.IsDigit(rune(ch)) || ch == '-' || ch == '.' || ch == '/'
 }
 
 func (l *Lexer) readWord() string {
