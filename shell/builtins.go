@@ -4,6 +4,7 @@ import (
 	"fmt"
 	"io"
 	"os"
+	"os/exec"
 )
 
 
@@ -13,6 +14,33 @@ type BuiltInCmd struct {
 	In  io.Reader
 	Out io.Writer
 	Err io.Writer
+}
+
+func (s *Shell) typeCmd(out io.Writer, args ...string) error {
+	for _, c := range args {
+		if _, ok := s.builtIns[c]; ok {
+			fmt.Printf("%s is a shell builtin\n", c)
+		} else if !ok {
+			p, err := exec.LookPath(args[0])
+			if err != nil {
+				fmt.Printf("%s: not found\n", c)
+			} else {
+				fmt.Printf("%s is %s\n", c, p)
+			}
+		}
+	}
+	return nil
+}
+
+func (s *Shell) echo(out io.Writer, args ...string) error {
+	for _, v := range args {
+		_, err := fmt.Fprint(out, v)
+		if err != nil {
+			return err
+		}
+	}
+	_, err := fmt.Fprintln(out)
+	return err
 }
 
 func (s *Shell) cd(args ...string) error {

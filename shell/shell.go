@@ -26,6 +26,8 @@ func New() *Shell {
 		builtIns: map[string]bool{
 			"cd":  true,
 			"pwd": true,
+			"type":true,
+			"echo":true,
 		},
 	}
 }
@@ -202,6 +204,10 @@ func (s *Shell) handleBuiltIn(cmd *BuiltInCmd) error {
 		return s.cd(cmd.Args...)
 	case "pwd":
 		return s.pwd(cmd.Out)
+	case "echo":
+		return s.echo(cmd.Out, cmd.Args...)
+	case "type":
+		return s.typeCmd(cmd.Out, cmd.Args...)
 	default:
 		return fmt.Errorf("%s: command not found", cmd.Name)
 	}
