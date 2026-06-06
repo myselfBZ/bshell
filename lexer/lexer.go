@@ -7,6 +7,7 @@ import (
 	"github.com/myselfBZ/bshell/token"
 )
 
+
 func New(input string) *Lexer {
 	l := &Lexer{
 		input: input,
@@ -17,8 +18,6 @@ func New(input string) *Lexer {
 }
 
 type Lexer struct {
-	inSingleQuote  bool
-	inDoubleQuote bool
 	ch            byte
 	pos           int
 	input         string
@@ -45,18 +44,28 @@ func isLetter(ch byte) bool {
 	ch == '-' || 
 	ch == '.' || 
 	ch == '/' ||
-	ch == '~'
+	ch == '~' ||
+	ch == '_' ||
+	ch == ':'
 }
 
-func (l *Lexer) readWord() string {
-	word := []byte{}
 
-	for isLetter(l.ch) {
-		word = append(word, l.ch)
+
+
+func (l *Lexer) readWord() string {
+	word := ""
+
+	for isLetter(l.ch) || l.ch == '\\' {
+		if l.ch == '\\' {
+			l.readChar()
+			word += string(l.ch)
+		} else {
+			word += string(l.ch)
+		}
 		l.readChar()
 	}
 
-	return string(word)
+	return word
 }
 
 func (l *Lexer) readChar() {
@@ -78,55 +87,91 @@ func (l *Lexer) readAdjacentContent() string {
 	hasAdjacentContent := true
 	content := ""
 	for hasAdjacentContent {
+
 		if l.ch == '\'' {
-			adjacentQuote := true
-			for adjacentQuote {
-				l.inSingleQuote = true
-				quoteContent := l.readQuote()
-				content += quoteContent
-				l.readChar()
-				adjacentQuote = l.ch == '\''
-			}
+			quoteContent := l.readSingleQuote()
+			content += quoteContent
+			l.readChar()
 		}
+
+		if l.ch == '"' {
+			quoteContent := l.readDoubleQuote()
+			content += quoteContent
+			l.readChar()
+		}
+	
 
 		if isLetter(l.ch) {
-			adjacentWord := true
-			for adjacentWord {
-				wordContent := l.readWord()
-				content += wordContent
-				adjacentWord = isLetter(l.ch)
-			}
+			wordContent := l.readWord()
+			content += wordContent
 		}
+		
 
-		hasAdjacentContent = isLetter(l.ch) || l.ch == '\''
+		hasAdjacentContent = isLetter(l.ch) || l.ch == '\'' || l.ch == '"'
 	}
 
 	return content
 }
 
-func (l *Lexer) readQuote() string {
+
+func (l *Lexer) readDoubleQuote() string {
 	l.readChar()
 
 	word := ""
-	for (l.inDoubleQuote || l.inSingleQuote) && l.ch != 0 {
-
-		if l.ch == '\'' && l.inSingleQuote {
-			l.inSingleQuote = false
-			return word
+	for l.ch != '"' && l.ch != 0 {
+		// escape sequence
+		if l.ch == '\\' {
+			l.readChar()
+			switch l.ch {
+			case '\\':
+				word += "\\"
+			case '"':
+				word += "\""
+			default:
+				word += "\\" + string(l.ch)
+			}
+		} else {
+			word += string(l.ch)
 		}
+		l.readChar()
+	}
+	return word
+}
 
-		if l.ch == '"' && l.inDoubleQuote {
-			l.inDoubleQuote = false
-			return word
-		}
-
-
+func (l *Lexer) readSingleQuote() string {
+	l.readChar()
+	word := ""
+	for l.ch != '\'' && l.ch != 0 {
 		word += string(l.ch)
 		l.readChar()
 	}
-
 	return word
 }
+
+//
+// func (l *Lexer) readQuote() string {
+// 	l.readChar()
+//
+// 	word := ""
+// 	for (l.inDoubleQuote || l.inSingleQuote) && l.ch != 0 {
+//
+// 		if l.ch == '\'' && l.inSingleQuote {
+// 			l.inSingleQuote = false
+// 			return word
+// 		}
+//
+// 		if l.ch == '"' && l.inDoubleQuote {
+// 			l.inDoubleQuote = false
+// 			return word
+// 		}
+//
+//
+// 		word += string(l.ch)
+// 		l.readChar()
+// 	}
+//
+// 	return word
+// }
 
 func (l *Lexer) NextToken() token.Token {
 	l.skipWhiteSpace()
@@ -134,19 +179,24 @@ func (l *Lexer) NextToken() token.Token {
 	var t token.Token
 	switch l.ch {
 	case '\'':
-		l.inSingleQuote = true
-		word := l.readQuote()
+		// l.inSingleQuote = true
+		word := l.readSingleQuote()
 		l.readChar()
 		// handling adjacent words and quotes
-		if isLetter(l.ch) || l.ch == '\'' {
+		if isLetter(l.ch) || l.ch == '\'' || l.ch == '"'{
 			content := l.readAdjacentContent()
 			word += content
 		}
 		t = token.NewToken(token.WORD, word)
 		return t
 	case '"':
-		l.inDoubleQuote = true
-		word := l.readQuote()
+		// l.inDoubleQuote = true
+		word := l.readDoubleQuote()
+		l.readChar()
+		if isLetter(l.ch) || l.ch == '\'' || l.ch == '"'{
+			content := l.readAdjacentContent()
+			word += content
+		}
 		t = token.NewToken(token.WORD, word)
 	case ')':
 		t = token.NewToken(token.RIGHT_PAR, string(l.ch))
@@ -189,12 +239,30 @@ func (l *Lexer) NextToken() token.Token {
 	default:
 		if l.ch == '2' && l.peek() == '>'{
 			l.readChar()
-			t = token.NewToken(token.TWO_GT, "2>")
+			// handling 2>>
+			if l.peek() == '>' {
+				l.readChar()
+				t = token.NewToken(token.TWO_GTGT, "2>>")
+			} else {
+				t = token.NewToken(token.TWO_GT, "2>")
+			}
+
+		} else if l.ch == '1' && l.peek() == '>' {
+			l.readChar()
+
+			// handling 1>>
+			if l.peek() == '>' {
+				l.readChar()
+				t = token.NewToken(token.ONE_GTGT, "1>>")
+			} else {
+				t = token.NewToken(token.GT, "1>")
+			}
+
 		} else {
 			word := l.readWord()
 			if word != "" {
-				// adjacent content
-				if isLetter(l.ch) || l.ch == '\'' {
+				// adjacent quotes
+				if isLetter(l.ch) || l.ch == '\'' || l.ch == '"'{
 					content := l.readAdjacentContent()
 					word += content
 				}
@@ -206,7 +274,6 @@ func (l *Lexer) NextToken() token.Token {
 				fmt.Println("You're wrong current token:", string(l.ch))
 				panic("readWord(): empty string")
 			}
-
 		}
 
 	}
@@ -214,3 +281,4 @@ func (l *Lexer) NextToken() token.Token {
 	l.readChar()
 	return t
 }
+

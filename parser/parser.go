@@ -200,6 +200,8 @@ func (p *Parser) parseSimpleCommand() (ast.Command, error) {
 		token.LT:           p.parseRedirect,
 		token.GT:           p.parseRedirect,
 		token.GTGT:         p.parseRedirect,
+		token.TWO_GTGT: 	p.parseRedirect,
+		token.ONE_GTGT: 	p.parseRedirect,
 		token.TWO_GT:       p.parseRedirect,
 		token.AMPERSAND_GT: p.parseRedirect,
 	}

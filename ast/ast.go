@@ -13,6 +13,7 @@ const (
 	RedirectStdErr
 	RedirectStdErrAndOut
 	RedirectStdoutAppend
+	RedirectStdErrAppend
 )
 
 var Redirects = map[string]RedirectType{
@@ -21,6 +22,8 @@ var Redirects = map[string]RedirectType{
 	">>": RedirectStdoutAppend,
 	"&>": RedirectStdErrAndOut,
 	"2>": RedirectStdErr,
+	"1>>":RedirectStdoutAppend,
+	"2>>":RedirectStdErrAppend,
 }
 
 var (

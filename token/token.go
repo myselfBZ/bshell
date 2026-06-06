@@ -13,6 +13,10 @@ const (
 
 	LT           = "<"
 	GT           = ">"
+	TWO_GTGT     = "2>>"
+	ONE_GTGT     = "1>>"
+
+
 	TWO_GT       = "2>"
 	AMPERSAND_GT = "&>"
 	GTGT         = ">>"
