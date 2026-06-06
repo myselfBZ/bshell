@@ -5,6 +5,7 @@ import (
 	"io"
 	"os"
 	"os/exec"
+	"strings"
 )
 
 
@@ -19,13 +20,13 @@ type BuiltInCmd struct {
 func (s *Shell) typeCmd(out io.Writer, args ...string) error {
 	for _, c := range args {
 		if _, ok := s.builtIns[c]; ok {
-			fmt.Printf("%s is a shell builtin\n", c)
+			fmt.Fprintf(out, "%s is a shell builtin\n", c)
 		} else if !ok {
 			p, err := exec.LookPath(args[0])
 			if err != nil {
-				fmt.Printf("%s: not found\n", c)
+				fmt.Fprintf(out, "%s: not found\n", c)
 			} else {
-				fmt.Printf("%s is %s\n", c, p)
+				fmt.Fprintf(out, "%s is %s\n", c, p)
 			}
 		}
 	}
@@ -33,13 +34,8 @@ func (s *Shell) typeCmd(out io.Writer, args ...string) error {
 }
 
 func (s *Shell) echo(out io.Writer, args ...string) error {
-	for _, v := range args {
-		_, err := fmt.Fprint(out, v)
-		if err != nil {
-			return err
-		}
-	}
-	_, err := fmt.Fprintln(out)
+	str := strings.Join(args, " ")
+	_, err := fmt.Fprintln(out, str)
 	return err
 }
 
@@ -49,6 +45,7 @@ func (s *Shell) cd(args ...string) error {
 		targetDir = s.user.HomeDir
 	} else {
 		targetDir = args[0]
+		targetDir = strings.ReplaceAll(targetDir, "~", s.user.HomeDir)
 	}
 	err := os.Chdir(targetDir)
 	if err != nil {

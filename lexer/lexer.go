@@ -40,7 +40,12 @@ func (l *Lexer) peek() byte {
 
 // do not mind the name
 func isLetter(ch byte) bool {
-	return unicode.IsLetter(rune(ch)) || unicode.IsDigit(rune(ch)) || ch == '-' || ch == '.' || ch == '/'
+	return unicode.IsLetter(rune(ch)) || 
+	unicode.IsDigit(rune(ch)) || 
+	ch == '-' || 
+	ch == '.' || 
+	ch == '/' ||
+	ch == '~'
 }
 
 func (l *Lexer) readWord() string {
@@ -67,6 +72,36 @@ func (l *Lexer) readChar() {
 	} else {
 		l.ch = 0
 	}
+}
+
+func (l *Lexer) readAdjacentContent() string {
+	hasAdjacentContent := true
+	content := ""
+	for hasAdjacentContent {
+		if l.ch == '\'' {
+			adjacentQuote := true
+			for adjacentQuote {
+				l.inSingleQuote = true
+				quoteContent := l.readQuote()
+				content += quoteContent
+				l.readChar()
+				adjacentQuote = l.ch == '\''
+			}
+		}
+
+		if isLetter(l.ch) {
+			adjacentWord := true
+			for adjacentWord {
+				wordContent := l.readWord()
+				content += wordContent
+				adjacentWord = isLetter(l.ch)
+			}
+		}
+
+		hasAdjacentContent = isLetter(l.ch) || l.ch == '\''
+	}
+
+	return content
 }
 
 func (l *Lexer) readQuote() string {
@@ -101,7 +136,14 @@ func (l *Lexer) NextToken() token.Token {
 	case '\'':
 		l.inSingleQuote = true
 		word := l.readQuote()
+		l.readChar()
+		// handling adjacent words and quotes
+		if isLetter(l.ch) || l.ch == '\'' {
+			content := l.readAdjacentContent()
+			word += content
+		}
 		t = token.NewToken(token.WORD, word)
+		return t
 	case '"':
 		l.inDoubleQuote = true
 		word := l.readQuote()
@@ -151,13 +193,20 @@ func (l *Lexer) NextToken() token.Token {
 		} else {
 			word := l.readWord()
 			if word != "" {
+				// adjacent content
+				if isLetter(l.ch) || l.ch == '\'' {
+					content := l.readAdjacentContent()
+					word += content
+				}
 				t = token.NewToken(token.WORD, word)
+
 				return t
 			} else {
 				// TODO couldn't think of sth else
 				fmt.Println("You're wrong current token:", string(l.ch))
 				panic("readWord(): empty string")
 			}
+
 		}
 
 	}
