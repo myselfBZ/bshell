@@ -79,7 +79,6 @@ func main() {
 
 	sh := shell.New()
 	for {
-		fmt.Print("$ ")
 		input, err := r1.Readline()
 
 		if err != nil {
