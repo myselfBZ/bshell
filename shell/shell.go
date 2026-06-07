@@ -28,6 +28,7 @@ func New() *Shell {
 			"pwd": true,
 			"type":true,
 			"echo":true,
+			"exit":true,
 		},
 	}
 }
@@ -206,6 +207,9 @@ func (s *Shell) handleBuiltIn(cmd *BuiltInCmd) error {
 		return s.pwd(cmd.Out)
 	case "echo":
 		return s.echo(cmd.Out, cmd.Args...)
+	case "exit":
+		os.Exit(0)
+		return nil
 	case "type":
 		return s.typeCmd(cmd.Out, cmd.Args...)
 	default:
