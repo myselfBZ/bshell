@@ -1,11 +1,11 @@
 package main
 
 import (
-	"bufio"
 	"fmt"
 	"os"
 	"strings"
 
+	"github.com/chzyer/readline"
 	"github.com/myselfBZ/bshell/ast"
 	"github.com/myselfBZ/bshell/lexer"
 	"github.com/myselfBZ/bshell/parser"
@@ -61,15 +61,36 @@ func WalkPrint(cmd []ast.Command) {
 }
 
 func main() {
+
+	autoCompleter := readline.NewPrefixCompleter(
+		readline.PcItem("echo"),
+		readline.PcItem("exit"),
+	)
+
+	r1, err := readline.NewEx(&readline.Config{
+		Prompt: "$ ",
+		AutoComplete: autoCompleter,
+		InterruptPrompt: "^C",
+	})
+	if err != nil {
+		panic(err)
+	}
+	defer r1.Close()
+
 	sh := shell.New()
 	for {
-		fmt.Print(">> ")
-		r := bufio.NewReader(os.Stdin)
-		input, _, err := r.ReadLine()
+		fmt.Print("$ ")
+		input, err := r1.Readline()
 
 		if err != nil {
-			fmt.Println("error reading a the input:", err)
-			continue
+			switch err {
+			case readline.ErrInterrupt:
+				os.Exit(0)
+				return
+			default:
+				fmt.Println("error reading a line:", err)
+				os.Exit(1)
+			}
 		}
 
 		if string(input) == "" {
