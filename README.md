@@ -2,20 +2,21 @@
 
 a custom POSIX-compliant shell inspired by bash.
 
+Requirements:
+- Go >= 1.25.1
 
-For now:
+
+
+## Architecture 
+
+```mermaid
+graph TD
+    A[Lexer] -->|Token Stream| B[Parser]
+    B -->|Abstract Syntax Tree| C[Eval]
+```
+
+Run:
 ```zsh
 go run main.go
 ```
-
-
-it's valid to call me a hipster for using exec.Command() instead of doing the bread and butter of C's 
-```c 
-fork() 
-execlp() 
-waitpid()
-``` 
-and looking up the binary in the $PATH
-
-
 
